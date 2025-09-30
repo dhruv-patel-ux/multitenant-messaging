@@ -1,0 +1,68 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: multitenant-api
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USERNAME=localhost
+      - DB_PASSWORD=12345678
+      - DB_DATABASE=multitenant_messaging
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - WAHA_BASE_URL=http://waha:3001
+      - WAHA_API_KEY=${WAHA_API_KEY:-wahaintegrationapikey009908}
+      - JWT_SECRET=${JWT_SECRET:-dev-jwt-secret-change}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-dev-refresh-secret-change}
+      - WEBHOOK_SECRET=${WEBHOOK_SECRET:-dev-webhook-secret}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+      - redis
+      - waha
+
+  db:
+    image: postgres:15-alpine
+    container_name: multitenant-db
+    environment:
+      - POSTGRES_USER=localhost
+      - POSTGRES_PASSWORD=12345678
+      - POSTGRES_DB=multitenant_messaging
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: multitenant-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  waha:
+    image: devlikeapro/waha:latest
+    container_name: waha
+    environment:
+      - WAHA_API_KEY=${WAHA_API_KEY:-wahaintegrationapikey009908}
+      - WAHA_PORT=3001
+    ports:
+      - "3001:3001"
+
+volumes:
+  db_data:
+  redis_data:

@@ -1,0 +1,539 @@
+{
+  "info": {
+    "name": "Multi-Tenant Messaging API",
+    "description": "Comprehensive messaging microservice with WhatsApp integration through WAHA",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tenant_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@company.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', response.refreshToken);",
+                  "    pm.collectionVariables.set('tenant_id', response.user.tenantId);",
+                  "    console.log('Login successful, tokens saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.accessToken);",
+                  "    pm.collectionVariables.set('refresh_token', response.refreshToken);",
+                  "    console.log('Token refreshed successfully');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refresh_token}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Send Single Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{session_id}}\",\n  \"to\": \"+1234567890\",\n  \"body\": \"Hello from the messaging API!\",\n  \"priority\": \"normal\",\n  \"metadata\": {\n    \"campaignId\": \"campaign-123\",\n    \"tags\": [\"marketing\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/messages/send",
+              "host": ["{{base_url}}"],
+              "path": ["messages", "send"]
+            }
+          }
+        },
+        {
+          "name": "Send Bulk Messages",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{session_id}}\",\n  \"recipients\": [\"+1234567890\", \"+0987654321\", \"+1122334455\"],\n  \"body\": \"Bulk notification message\",\n  \"batchSize\": 10,\n  \"priority\": \"normal\",\n  \"metadata\": {\n    \"campaignId\": \"bulk-001\",\n    \"tags\": [\"notification\"]\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/messages/bulk",
+              "host": ["{{base_url}}"],
+              "path": ["messages", "bulk"]
+            }
+          }
+        },
+        {
+          "name": "Get Messages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages?page=1&limit=20&direction=outbound&status=sent",
+              "host": ["{{base_url}}"],
+              "path": ["messages"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "direction",
+                  "value": "outbound"
+                },
+                {
+                  "key": "status",
+                  "value": "sent"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Message by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/{{message_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["messages", "{{message_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Message Statistics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/stats?fromDate=2024-01-01T00:00:00Z&toDate=2024-01-31T23:59:59Z",
+              "host": ["{{base_url}}"],
+              "path": ["messages", "stats"],
+              "query": [
+                {
+                  "key": "fromDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "toDate",
+                  "value": "2024-01-31T23:59:59Z"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Retry Failed Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/{{message_id}}/retry",
+              "host": ["{{base_url}}"],
+              "path": ["messages", "{{message_id}}", "retry"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "WAHA Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"main-session\",\n  \"engine\": \"WEBJS\",\n  \"config\": {\n    \"timeout\": 30000\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/waha/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('session_id', response.data.id);",
+                  "    console.log('Session created, ID saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/waha/sessions",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions"]
+            }
+          }
+        },
+        {
+          "name": "Get Session Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/waha/sessions/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions", "{{session_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Session QR Code",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/waha/sessions/{{session_id}}/qr",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions", "{{session_id}}", "qr"]
+            }
+          }
+        },
+        {
+          "name": "Stop Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/waha/sessions/{{session_id}}/stop",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions", "{{session_id}}", "stop"]
+            }
+          }
+        },
+        {
+          "name": "Delete Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/waha/sessions/{{session_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["waha", "sessions", "{{session_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "WAHA Webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Waha-Signature",
+                "value": "sha256=test-signature"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event\": \"message.text\",\n  \"session\": \"main-session\",\n  \"payload\": {\n    \"id\": \"waha_msg_123456\",\n    \"from\": \"+1234567890\",\n    \"to\": \"+0987654321\",\n    \"body\": \"Hello, this is a test message\",\n    \"timestamp\": 1642248600000,\n    \"type\": \"text\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/webhooks/waha",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "waha"]
+            }
+          }
+        },
+        {
+          "name": "Webhook Health Check",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/webhooks/health",
+              "host": ["{{base_url}}"],
+              "path": ["webhooks", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Health & Monitoring",
+      "item": [
+        {
+          "name": "Application Health",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/health",
+              "host": ["{{base_url}}"],
+              "path": ["health"]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh token if needed",
+          "const token = pm.collectionVariables.get('jwt_token');",
+          "if (!token) {",
+          "    console.log('No JWT token found, please login first');",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test to handle common responses",
+          "if (pm.response.code === 401) {",
+          "    console.log('Unauthorized - token may be expired, please login again');",
+          "}",
+          "",
+          "if (pm.response.code === 429) {",
+          "    console.log('Rate limit exceeded - please wait before retrying');",
+          "}",
+          "",
+          "if (pm.response.code >= 500) {",
+          "    console.log('Server error - please check server logs');",
+          "}"
+        ]
+      }
+    }
+  ]
+}
